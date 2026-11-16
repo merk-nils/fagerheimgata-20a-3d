@@ -17,7 +17,8 @@
   button { font: inherit; font-size: 12px; border: 0; border-radius: 4px; padding: 6px 9px; background: var(--svart); color: #fff; cursor: pointer; }
   button.rod { background: var(--rod); }
   button.av { background: #777; }
-  @media (max-width: 600px) { #panel { font-size: 12px; padding: 10px; } #panel p.liten { display: none; } }
+  #kort { display: none; }
+  @media (max-width: 600px) { #panel { font-size: 12px; padding: 10px; } #panel p.liten { display: none; } #panel #kort { display: block; margin: 6px 0 0; } }
 </style>
 </head>
 <body>
@@ -28,6 +29,7 @@
   <div id="knapper"></div>
   <p class="liten">Illustrasjon for salg (spor A). Planen er fra Skaara A1-11-01. Mål og plassering er ca. og ikke for byggesak.
   Takvinkel (ca. 35°), knevegger og takhøyde er antatt, fordi vi ikke har snitt. Innredning, farger og overflater er illustrasjon. Bygget er ikke ferdigprosjektert.</p>
+  <div id="kort" class="liten">Illustrasjon. Mål og høyder er ca. og ikke for byggesak.</div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -295,8 +297,10 @@ function knapp(tekst, fn, klasse = '') { const b = document.createElement('butto
 let fly = null;
 function gaaTil(navn) {
   const [k, m] = D.visninger[navn];
-  fly = { fraK: camera.position.clone(), fraM: controls.target.clone(), tilK: W(...k), tilM: W(...m), t: 0 };
   const inne = !['Med tak', 'Ovenfra uten tak'].includes(navn);
+  const tilK = W(...k), tilM = W(...m);
+  if (!inne && camera.aspect < 1.2) tilK.sub(tilM).multiplyScalar(1.6 / camera.aspect).add(tilM);  // smal skjerm: lenger unna
+  fly = { fraK: camera.position.clone(), fraM: controls.target.clone(), tilK, tilM, t: 0 };
   grupper.tak.visible = navn !== 'Ovenfra uten tak';
   takKnapp.textContent = grupper.tak.visible ? 'Skjul taket' : 'Vis taket';
   grupper.navn.visible = !inne && !grupper.tak.visible && navnPaa;
@@ -312,9 +316,8 @@ const navnKnapp = knapp('Skjul romnavn', () => { navnPaa = !navnPaa; grupper.nav
 // start i en visning: ?vis=Stue (brukes også til kontrollbilder)
 const start = new URLSearchParams(location.search).get('vis');
 const startNavn = D.visninger[start] ? start : 'Med tak';
-gaaTil(startNavn); fly.t = 1;
-const [k0, m0] = D.visninger[startNavn];
-camera.position.copy(W(...k0)); controls.target.copy(W(...m0)); fly = null;
+gaaTil(startNavn);
+camera.position.copy(fly.tilK); controls.target.copy(fly.tilM); fly = null;
 addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
 (function tegn() {
   requestAnimationFrame(tegn);
