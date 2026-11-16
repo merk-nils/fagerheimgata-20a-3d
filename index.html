@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Fagerheimgata 20 A 3D</title>
+<style>
+  :root { --rod: #ea4f3d; --svart: #121212; --gra: #f8f8f8; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #dfe6ec; font-family: Poppins, Arial, sans-serif; }
+  #vis { position: fixed; inset: 0; }
+  #panel { position: fixed; left: 16px; top: 16px; max-width: min(360px, calc(100vw - 32px)); background: rgba(248,248,248,.93);
+           color: var(--svart); border-radius: 8px; padding: 12px 14px; font-size: 13px; line-height: 1.4; box-shadow: 0 2px 10px rgba(0,0,0,.15); }
+  #panel h1 { font-size: 16px; margin: 0 0 4px; }
+  #panel .liten { font-size: 11px; color: #555; }
+  #knapper { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  button { font: inherit; font-size: 12px; border: 0; border-radius: 4px; padding: 6px 9px; background: var(--svart); color: #fff; cursor: pointer; }
+  button.rod { background: var(--rod); }
+  button.av { background: #777; }
+  @media (max-width: 600px) { #panel { font-size: 12px; padding: 10px; } #panel p.liten { display: none; } }
+</style>
+</head>
+<body>
+<div id="vis"></div>
+<div id="panel">
+  <h1>Fagerheimgata 20 A – loftsleiligheten ferdig</h1>
+  <div>Toroms på ca. 33 m² i 7. etasje på Torshov, med takterrasse mot bakgården og takvindu mot gata.</div>
+  <div id="knapper"></div>
+  <p class="liten">Illustrasjon for salg (spor A). Planen er fra Skaara A1-11-01. Mål og plassering er ca. og ikke for byggesak.
+  Takvinkel (ca. 35°), knevegger og takhøyde er antatt, fordi vi ikke har snitt. Innredning, farger og overflater er illustrasjon. Bygget er ikke ferdigprosjektert.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+const D = {"bredde": 10.5, "dybde": 5.0, "tak": {"vinkel": 35.0, "knevegg_gate": 0.78, "knevegg_bakgard": 1.27, "himling": 2.7, "tykkelse": 0.35}, "rom": [{"navn": "Stue", "areal": "13,5 m²", "senter": [2.3, 3.1], "gulv": "parkett"}, {"navn": "Kjøkken", "areal": "7 m²", "senter": [5.9, 1.3], "gulv": "parkett"}, {"navn": "Bad", "areal": "4,4 m²", "senter": [4.95, 3.3], "gulv": "flis"}, {"navn": "Sov", "areal": "8,5 m²", "senter": [8.9, 3.6], "gulv": "parkett"}, {"navn": "Terrasse", "areal": "3,3 m²", "senter": [9.0, 1.45], "gulv": "terrasse"}], "gulv": [[0, 0, 4.0, 5.0, "parkett"], [4.0, 0, 8.0, 2.0, "parkett"], [5.85, 2.0, 10.5, 5.0, "parkett"], [4.1, 2.08, 5.85, 4.47, "flis"], [4.1, 4.47, 5.85, 5.0, "sjakt"], [8.0, 0, 10.5, 2.2, "terrasse"]], "vegger": [[0, -0.25, 10.5, -0.25, 0.5, "brannmur"], [0, 5.1, 10.5, 5.1, 0.2, "vegg"], [3.95, 2.0, 3.95, 5.0, 0.15, "vegg"], [4.1, 2.04, 5.85, 2.04, 0.1, "vegg"], [5.93, 2.0, 5.93, 5.0, 0.15, "vegg"], [4.1, 4.56, 5.85, 4.56, 0.18, "vegg"], [7.9, 0, 7.9, 2.25, 0.12, "vegg"], [7.9, 2.3, 10.5, 2.3, 0.3, "vegg"], [7.0, 2.3, 7.0, 3.2, 0.1, "vegg"], [6.0, 2.0, 7.9, 2.0, 0.1, "vegg"]], "dorer": [[1, 3.1, 4.0, 2.05], [1, 7.45, 8.3, 2.05], [6, 0.95, 1.85, 2.05], [9, 0.1, 0.95, 2.05], [4, 0.15, 0.95, 2.05]], "hull": [{"side": "gate", "y1": 0.95, "y2": 2.65, "x1": 0.25, "x2": 2.2, "type": "vindu", "merk": "Takvindu mot gate, bredde 1,7 m (skrevet)"}, {"side": "bakgard", "y1": 3.45, "y2": 4.15, "x1": 9.0, "x2": 10.3, "type": "vindu", "merk": "Takvindu mot bakgård, bredde 0,7 m (skrevet)"}, {"side": "bakgard", "y1": 0.6, "y2": 2.2, "x1": 8.0, "x2": 10.5, "type": "terrasse", "merk": "Takterrasse 3,3 m² (skrevet), ca. 2,5 x 1,6 m"}], "innredning": [["sofa", 1.6, 4.0, 2.4, 0.95, 0.8, 0], ["bord_lavt", 2.2, 3.1, 0.9, 0.6, 0.42, 0], ["spisebord", 1.75, 1.35, 1.6, 0.85, 0.75, 0], ["stol", 1.2, 0.75, 0.45, 0.45, 0.85, 0], ["stol", 2.3, 0.75, 0.45, 0.45, 0.85, 0], ["stol", 1.2, 1.95, 0.45, 0.45, 0.85, 180], ["stol", 2.3, 1.95, 0.45, 0.45, 0.85, 180], ["sittebenk", 2.5, 0.25, 2.2, 0.45, 0.45, 0], ["oppbevaring", 1.6, 4.75, 2.6, 0.45, 0.6, 0], ["kjokken_benk", 5.9, 0.3, 3.8, 0.6, 0.9, 0], ["kjokken_overskap", 5.9, 0.18, 3.8, 0.35, 0.7, 0], ["kjokken_hoyskap", 7.55, 0.3, 0.6, 0.6, 2.2, 0], ["toalett", 4.55, 4.15, 0.38, 0.6, 0.42, 0], ["servant", 4.35, 2.55, 0.45, 0.6, 0.85, 0], ["dusj", 5.3, 3.2, 0.9, 0.9, 2.0, 0], ["garderobe", 6.3, 3.8, 0.6, 1.6, 2.2, 0], ["seng", 8.9, 3.75, 1.6, 2.0, 0.5, 90], ["nattbord", 8.0, 2.95, 0.45, 0.4, 0.5, 0], ["terrasse_benk", 10.0, 1.4, 0.45, 1.5, 0.45, 0], ["terrasse_bord", 9.2, 1.4, 0.6, 0.6, 0.7, 0], ["plante", 0.5, 3.1, 0.45, 0.45, 0.9, 0], ["plante", 7.6, 1.6, 0.4, 0.4, 0.8, 0], ["teppe", 2.2, 3.3, 2.4, 1.7, 0.01, 0]], "visninger": {"Med tak": [[-9.0, 14.0, 9.0], [5.2, 2.5, 1.5]], "Ovenfra uten tak": [[5.2, 9.5, 11.0], [5.2, 2.5, 0.0]], "Stue": [[3.7, 4.6, 1.6], [0.8, 1.0, 1.2]], "Kjøkken": [[2.2, 1.9, 1.65], [7.0, 0.5, 1.0]], "Soverom": [[6.5, 4.75, 1.7], [10.0, 3.3, 0.7]], "Takterrassen": [[6.4, 1.7, 1.65], [10.3, 1.2, 0.5]]}};
+const B = D.bredde, DY = D.dybde, T = D.tak;
+const tan = Math.tan(T.vinkel * Math.PI / 180);
+const W = (x, y, z) => new THREE.Vector3(x, z, y);              // planmeter (x, y) og høyde z -> three
+const hGate = x => T.knevegg_gate + x * tan;
+const hBak = x => T.knevegg_bakgard + (B - x) * tan;
+const takInne = x => Math.min(hGate(x), hBak(x));                 // innsiden av taket
+const tik = T.tykkelse / Math.cos(T.vinkel * Math.PI / 180);
+const takUte = x => takInne(x) + tik;                             // tekkingen
+const himling = x => Math.min(T.himling, takInne(x));
+const xGate = (T.himling - T.knevegg_gate) / tan;                 // der skråtaket mot gata møter himlingen
+const xBak = B - (T.himling - T.knevegg_bakgard) / tan;
+const xMone = (T.knevegg_bakgard - T.knevegg_gate + B * tan) / (2 * tan);
+
+// ---------- renderer, scene, kamera
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.0;
+document.getElementById('vis').appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color('#dfe6ec');
+const camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.05, 400);
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+
+scene.add(new THREE.HemisphereLight('#eef4ff', '#8a7a66', 0.75));
+const sol = new THREE.DirectionalLight('#fff0d8', 1.6);
+sol.position.copy(W(22, -6, 20)); sol.target.position.copy(W(5, 2.5, 0));
+sol.castShadow = true; sol.shadow.mapSize.set(2048, 2048);
+Object.assign(sol.shadow.camera, { left: -12, right: 12, top: 12, bottom: -12, near: 1, far: 80 });
+sol.shadow.bias = -0.0004;
+scene.add(sol, sol.target);
+for (const [x, y] of [[2, 2.5], [5.9, 1.2], [8.9, 3.6], [6.6, 3.6]]) {   // lys i taket (illustrasjon)
+  const l = new THREE.PointLight('#ffe2b8', 0.35, 7, 2); l.position.copy(W(x, y, 2.4)); scene.add(l);
+}
+
+// ---------- materialer
+const F = h => new THREE.Color(h).convertSRGBToLinear();
+const mat = (farge, rough = 0.85, ekstra = {}) =>
+  new THREE.MeshStandardMaterial(Object.assign({ color: F(farge), roughness: rough, side: THREE.DoubleSide }, ekstra));
+function lerret(tegn, rep = [1, 1], n = 512) {
+  const c = document.createElement('canvas'); c.width = c.height = n; tegn(c.getContext('2d'), n);
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(...rep);
+  t.encoding = THREE.sRGBEncoding; t.anisotropy = 8; return t;
+}
+let fro = 7; const tilf = () => (fro = (fro * 9301 + 49297) % 233280) / 233280;
+const parkett = lerret((g, n) => {          // eikeparkett, bord 0,19 x 1,8 m (lerret 1,2 x 1,2 m)
+  const b = n / 6.3;
+  for (let i = 0; i < 7; i++) for (let k = -1; k < 2; k++) {
+    const v = 0.88 + tilf() * 0.14, y0 = (k + (i % 3) / 3) * n * 1.5;
+    g.fillStyle = `rgb(${205 * v | 0},${172 * v | 0},${128 * v | 0})`; g.fillRect(i * b, y0, b, n * 1.5);
+    for (let s = 0; s < 14; s++) { g.fillStyle = `rgba(120,80,40,${0.05 + tilf() * 0.06})`; g.fillRect(i * b + tilf() * b, y0, 1, n * 1.5); }
+    g.fillStyle = 'rgba(70,45,20,.45)'; g.fillRect(i * b, y0, 1.5, n * 1.5); g.fillRect(i * b, y0, b, 1.5);
+  }
+});
+const flis = lerret((g, n) => {             // grå flis 30 x 60
+  g.fillStyle = '#b9b7b2'; g.fillRect(0, 0, n, n);
+  for (let j = 0; j < 4; j++) for (let i = 0; i < 2; i++) {
+    const v = 0.95 + tilf() * 0.08; g.fillStyle = `rgb(${200 * v | 0},${197 * v | 0},${191 * v | 0})`;
+    g.fillRect(i * n / 2 + 2, j * n / 4 + 2, n / 2 - 4, n / 4 - 4);
+  }
+});
+const terr = lerret((g, n) => {             // terrassebord
+  for (let i = 0; i < 9; i++) { const v = 0.85 + tilf() * 0.2; g.fillStyle = `rgb(${150 * v | 0},${118 * v | 0},${86 * v | 0})`; g.fillRect(0, i * n / 9, n, n / 9 - 5); }
+  g.fillStyle = '#3a2c20'; for (let i = 0; i < 9; i++) g.fillRect(0, i * n / 9 - 5, n, 5);
+});
+const tegl = lerret((g, n) => {             // rødbrun tegl, som fasaden på bildene
+  g.fillStyle = '#5b3a2c'; g.fillRect(0, 0, n, n);
+  for (let j = 0; j < 16; j++) for (let i = -1; i < 4; i++) {
+    const v = 0.8 + tilf() * 0.3; g.fillStyle = `rgb(${132 * v | 0},${76 * v | 0},${56 * v | 0})`;
+    g.fillRect(i * n / 4 + (j % 2) * n / 8 + 2, j * n / 16 + 2, n / 4 - 4, n / 16 - 4);
+  }
+}, [2, 2]);
+const takstein = lerret((g, n) => {         // grå betongtakstein, som taket på bildene
+  for (let j = 0; j < 8; j++) for (let i = -1; i < 9; i++) {
+    const v = 0.85 + tilf() * 0.2, x = i * n / 8 + (j % 2) * n / 16;
+    const gr = g.createLinearGradient(x, 0, x + n / 8, 0);
+    gr.addColorStop(0, `rgb(${50 * v | 0},${54 * v | 0},${60 * v | 0})`); gr.addColorStop(0.4, `rgb(${92 * v | 0},${97 * v | 0},${104 * v | 0})`);
+    gr.addColorStop(1, `rgb(${60 * v | 0},${64 * v | 0},${70 * v | 0})`); g.fillStyle = gr; g.fillRect(x, j * n / 8, n / 8, n / 8 - 3);
+  }
+});
+const M = {
+  vegg: mat('#f1eee8', 0.95), brannmur: mat('#f1eee8', 0.95), himling: mat('#f7f5f1', 0.95),
+  parkett: mat('#ffffff', 0.6, { map: parkett }), flis: mat('#ffffff', 0.4, { map: flis }), terrasse: mat('#ffffff', 0.9, { map: terr }),
+  sjakt: mat('#9a9a9a'), tak: mat('#ffffff', 0.8, { map: takstein }), tegl: mat('#ffffff', 0.9, { map: tegl }),
+  snitt: mat('#6d6d6d', 1), glass: new THREE.MeshPhysicalMaterial({ color: F('#cfe3f2'), roughness: 0.05, metalness: 0.1, transparent: true, opacity: 0.28, side: THREE.DoubleSide }),
+  ramme: mat('#3b3f44', 0.5), hvit: mat('#fbfbfa', 0.5), eik: mat('#c9a477', 0.6), tekstil: mat('#d8d0c4', 1), gronnTekstil: mat('#7f8a6a', 1),
+  stal: mat('#c9ccd0', 0.3, { metalness: 0.7 }), svart: mat('#2b2b2b', 0.5), gronn: mat('#5f7d4e', 0.9), krukke: mat('#d9cfc0', 0.7),
+  teppe: mat('#e9e3d8', 1),
+};
+
+const grupper = { tak: new THREE.Group(), rom: new THREE.Group(), navn: new THREE.Group(), bygg: new THREE.Group() };
+Object.values(grupper).forEach(g => scene.add(g));
+function mesh(geo, m, g = grupper.rom, skygge = true) {
+  const o = new THREE.Mesh(geo, m); o.castShadow = skygge; o.receiveShadow = true; g.add(o); return o;
+}
+function boks(x, y, z, b, d, h, m, g, rot = 0) {   // x, y = senter i plan, z = underkant
+  const o = mesh(new THREE.BoxGeometry(b, h, d), m, g); o.position.copy(W(x, y, z + h / 2)); o.rotation.y = -rot * Math.PI / 180; return o;
+}
+function quad(p, m, g, skygge = true) {             // fire punkter (THREE.Vector3)
+  const geo = new THREE.BufferGeometry().setFromPoints([p[0], p[1], p[2], p[0], p[2], p[3]]);
+  geo.computeVertexNormals(); return mesh(geo, m, g, skygge);
+}
+
+// ---------- flater med rektangulære hull: deles i celler, cellene i hull hoppes over.
+// f(x, y) gir høyden. uvSkala gir teksturens meter.
+function flate(x1, x2, y1, y2, f, m, g, hull = [], skygge = true) {
+  const xs = new Set([x1, x2]), ys = new Set([y1, y2]);
+  for (const h of hull) { [h.x1, h.x2].forEach(v => { if (v > x1 && v < x2) xs.add(v); }); [h.y1, h.y2].forEach(v => { if (v > y1 && v < y2) ys.add(v); }); }
+  const X = [...xs].sort((a, b) => a - b), Y = [...ys].sort((a, b) => a - b);
+  const pos = [], uv = [];
+  for (let i = 0; i < X.length - 1; i++) for (let j = 0; j < Y.length - 1; j++) {
+    const cx = (X[i] + X[i + 1]) / 2, cy = (Y[j] + Y[j + 1]) / 2;
+    if (hull.some(h => cx > h.x1 && cx < h.x2 && cy > h.y1 && cy < h.y2)) continue;
+    const p = [[X[i], Y[j]], [X[i + 1], Y[j]], [X[i + 1], Y[j + 1]], [X[i], Y[j + 1]]];
+    for (const k of [0, 1, 2, 0, 2, 3]) {
+      const [x, y] = p[k], z = f(x, y), v = W(x, y, z); pos.push(v.x, v.y, v.z);
+      const s = Math.hypot(x, z - f(0, y)); uv.push(s / 1.2, y / 1.2);
+    }
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  geo.computeVertexNormals(); return mesh(geo, m, g, skygge);
+}
+
+// ---------- gulv
+for (const [x1, y1, x2, y2, t] of D.gulv) flate(x1, x2, y1, y2, () => 0.002 * (t === 'flis' ? 2 : 1), M[t], grupper.rom);
+// etasjeskiller under (snitt) og fasadene ned mot 6. etasje (illustrasjon)
+boks(B / 2, DY / 2, -0.35, B + 0.7, DY + 0.6, 0.35, M.snitt, grupper.bygg);
+boks(-0.3, DY / 2, -3.2, 0.5, DY + 0.6, 3.2 + T.knevegg_gate, M.tegl, grupper.bygg);
+boks(B + 0.15, DY / 2, -3.2, 0.2, DY + 0.6, 3.2 + T.knevegg_bakgard, M.tegl, grupper.bygg);
+
+// ---------- tak: hull for takvinduer og terrasse
+const hullGate = D.hull.filter(h => h.side === 'gate'), hullBak = D.hull.filter(h => h.side === 'bakgard');
+const alleHull = D.hull;
+// innside: skråtak og himling
+flate(0, xGate, 0, DY, x => hGate(x), M.himling, grupper.tak, hullGate);
+flate(xBak, B, 0, DY, x => hBak(x), M.himling, grupper.tak, hullBak);
+flate(xGate, xBak, 0, DY, () => T.himling, M.himling, grupper.tak, alleHull);
+// utside: tekking fra raft til møne, med utstikk
+const y0 = -0.5, y1 = DY + 0.3;
+flate(-0.6, xMone, y0, y1, x => hGate(x) + tik, M.tak, grupper.tak, hullGate);
+flate(xMone, B + 0.35, y0, y1, x => hBak(x) + tik, M.tak, grupper.tak, hullBak.map(h => h.type === 'terrasse' ? Object.assign({}, h, { x2: B + 0.35 }) : h));
+// snittflater i endene av taket (gråe), så man ser at modellen er en del av et lengre bygg
+for (const y of [y0, y1]) {
+  const pts = []; for (let i = 0; i <= 40; i++) { const x = -0.6 + (B + 0.95) * i / 40; pts.push([x, takUte(x)]); }
+  for (let i = 0; i < 40; i++) {
+    const [xa, za] = pts[i], [xb, zb] = pts[i + 1];
+    quad([W(xa, y, takInne(xa) - 0.001), W(xb, y, takInne(xb) - 0.001), W(xb, y, zb), W(xa, y, za)], M.snitt, grupper.tak);
+  }
+}
+// lysninger rundt takvinduene og glass
+for (const h of D.hull.filter(h => h.type === 'vindu')) {
+  const fi = h.side === 'gate' ? hGate : hBak;
+  const { x1, x2, y1: ya, y2: yb } = h;
+  quad([W(x1, ya, fi(x1)), W(x2, ya, fi(x2)), W(x2, ya, fi(x2) + tik), W(x1, ya, fi(x1) + tik)], M.himling, grupper.tak);
+  quad([W(x1, yb, fi(x1)), W(x2, yb, fi(x2)), W(x2, yb, fi(x2) + tik), W(x1, yb, fi(x1) + tik)], M.himling, grupper.tak);
+  for (const x of [x1, x2]) quad([W(x, ya, fi(x)), W(x, yb, fi(x)), W(x, yb, fi(x) + tik), W(x, ya, fi(x) + tik)], M.himling, grupper.tak);
+  const g = quad([W(x1, ya, fi(x1) + tik * 0.8), W(x2, ya, fi(x2) + tik * 0.8), W(x2, yb, fi(x2) + tik * 0.8), W(x1, yb, fi(x1) + tik * 0.8)], M.glass, grupper.tak, false);
+  g.castShadow = false;
+  // ramme
+  const r = 0.07, z = x => fi(x) + tik + 0.02;
+  quad([W(x1, ya, z(x1)), W(x2, ya, z(x2)), W(x2, ya + r, z(x2)), W(x1, ya + r, z(x1))], M.ramme, grupper.tak);
+  quad([W(x1, yb - r, z(x1)), W(x2, yb - r, z(x2)), W(x2, yb, z(x2)), W(x1, yb, z(x1))], M.ramme, grupper.tak);
+  for (const [xa, xb] of [[x1, x1 + r], [x2 - r, x2]]) quad([W(xa, ya, z(xa)), W(xb, ya, z(xb)), W(xb, yb, z(xb)), W(xa, yb, z(xa))], M.ramme, grupper.tak);
+}
+
+// ---------- vegger. Høyden følger himlingen, brannmuren går helt opp til tekkingen.
+function veggProfil(a, b, topp) {          // punkter langs veggen der taket knekker
+  const k = [a, b, xGate, xBak, xMone].filter(v => v >= a && v <= b).sort((p, q) => p - q);
+  return [...new Set(k)].map(x => [x, topp(x)]);
+}
+D.vegger.forEach((v, i) => {
+  const [xa, ya, xb, yb, t, type] = v, m = M[type], langsX = Math.abs(yb - ya) < 1e-6;
+  const topp = type === 'brannmur' ? takUte : himling;
+  const a0 = langsX ? xa : ya, b0 = langsX ? xb : yb;
+  // stykker: mellom dørene fra gulvet, og over dørene fra dørhøyden
+  const dorer = D.dorer.filter(d => d[0] === i).map(d => [a0 + d[1], a0 + d[2], d[3]]).sort((p, q) => p[0] - q[0]);
+  const stykker = []; let fra = a0;
+  for (const [da, db, hd] of dorer) { if (da > fra) stykker.push([fra, da, 0]); stykker.push([da, db, hd]); fra = db; }
+  if (b0 > fra) stykker.push([fra, b0, 0]);
+  for (const [a, b, bunn] of stykker) {
+  const s = new THREE.Shape(); s.moveTo(a, bunn); s.lineTo(b, bunn);
+  const prof = langsX ? veggProfil(a, b, topp) : [[a, topp(xa)], [b, topp(xa)]];
+  if (prof.every(([, z]) => z <= bunn + 0.01)) continue;
+  for (const [p, z] of prof.reverse()) s.lineTo(p, Math.max(z, bunn));
+  const geo = new THREE.ExtrudeGeometry(s, { depth: t, bevelEnabled: false });
+  const p = geo.attributes.position;
+  for (let k = 0; k < p.count; k++) {
+    const u = p.getX(k), z = p.getY(k), d = p.getZ(k) - t / 2;
+    const w = langsX ? W(u, ya + d, z) : W(xa + d, u, z); p.setXYZ(k, w.x, w.y, w.z);
+  }
+  geo.computeVertexNormals(); mesh(geo, m, type === 'brannmur' ? grupper.bygg : grupper.rom);
+  }
+});
+// terrassen: sidevegger opp til tekkingen, kneveggen ut mot bakgården og vegg over himlingen
+const ter = D.hull.find(h => h.type === 'terrasse');
+for (const y of [ter.y1, ter.y2]) {
+  const pts = []; for (let i = 0; i <= 12; i++) { const x = ter.x1 + (B - ter.x1) * i / 12; pts.push([x, takUte(x)]); }
+  for (let i = 0; i < 12; i++) quad([W(pts[i][0], y, 0), W(pts[i + 1][0], y, 0), W(pts[i + 1][0], y, pts[i + 1][1]), W(pts[i][0], y, pts[i][1])], M.vegg, grupper.rom);
+}
+quad([W(ter.x1, ter.y1, himling(ter.x1)), W(ter.x1, ter.y2, himling(ter.x1)), W(ter.x1, ter.y2, takUte(ter.x1)), W(ter.x1, ter.y1, takUte(ter.x1))], M.vegg, grupper.rom);
+boks(B + 0.05, (ter.y1 + ter.y2) / 2, 0, 0.12, ter.y2 - ter.y1, Math.max(1.0, T.knevegg_bakgard), M.vegg, grupper.rom);
+// terrassedør og luftevindu som glass
+quad([W(7.9, 0.95, 0), W(7.9, 1.85, 0), W(7.9, 1.85, 2.05), W(7.9, 0.95, 2.05)], M.glass, grupper.rom, false);
+// knevegger og yttervegger innvendig
+boks(-0.025, DY / 2, 0, 0.05, DY, T.knevegg_gate, M.vegg, grupper.rom);
+boks(B + 0.025, DY / 2, 0, 0.05, DY, T.knevegg_bakgard, M.vegg, grupper.rom);
+
+// ---------- innredning (illustrasjon)
+const lagInn = {
+  sofa(x, y, b, d, h, r) { boks(x, y, 0, b, d, 0.42, M.tekstil, grupper.rom, r); boks(x, y + d / 2 - 0.12, 0.42, b, 0.24, 0.38, M.tekstil, grupper.rom, r);
+    boks(x - b / 2 + 0.6, y - 0.05, 0.42, 0.5, 0.3, 0.12, M.gronnTekstil, grupper.rom, r); },
+  bord_lavt(x, y, b, d, h) { const o = mesh(new THREE.CylinderGeometry(b / 2, b / 2, 0.05, 40), M.eik); o.position.copy(W(x, y, h - 0.03));
+    const f = mesh(new THREE.CylinderGeometry(0.2, 0.25, h - 0.05, 24), M.eik); f.position.copy(W(x, y, (h - 0.05) / 2)); },
+  spisebord(x, y, b, d, h) { boks(x, y, h - 0.04, b, d, 0.04, M.eik); for (const [dx, dy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) boks(x + dx * (b / 2 - 0.06), y + dy * (d / 2 - 0.06), 0, 0.05, 0.05, h - 0.04, M.eik); },
+  stol(x, y, b, d, h, r) { boks(x, y, 0.42, b, d, 0.05, M.tekstil, grupper.rom, r); boks(x, y + (r ? -1 : 1) * (d / 2 - 0.03), 0.47, b, 0.05, 0.4, M.tekstil, grupper.rom, r);
+    for (const [dx, dy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) boks(x + dx * (b / 2 - 0.04), y + dy * (d / 2 - 0.04), 0, 0.03, 0.03, 0.42, M.svart); },
+  sittebenk(x, y, b, d, h) { boks(x, y, 0, b, d, h, M.eik); boks(x, y, h, b, d, 0.06, M.gronnTekstil); },
+  oppbevaring(x, y, b, d, h) { boks(x, y, 0, b, d, h, M.hvit); },
+  kjokken_benk(x, y, b, d, h) { boks(x, y, 0.1, b, d, h - 0.14, M.hvit); boks(x, y, h - 0.04, b, d + 0.02, 0.04, M.eik);
+    boks(x - 0.4, y, h, 0.5, 0.4, 0.01, M.stal); boks(x + 0.6, y, h, 0.6, 0.5, 0.01, M.svart); },
+  kjokken_overskap(x, y, b, d, h) { boks(x - 0.3, y, 1.5, b - 0.6, d, h, M.hvit); },
+  kjokken_hoyskap(x, y, b, d, h) { boks(x, y, 0, b, d, h, M.hvit); },
+  toalett(x, y, b, d, h) { boks(x, y, 0, b, d, h, M.hvit); boks(x, y + d / 2 - 0.08, h, b, 0.16, 0.35, M.hvit); },
+  servant(x, y, b, d, h) { boks(x, y, h - 0.35, b, d, 0.35, M.eik); boks(x, y, h, b - 0.04, d - 0.1, 0.02, M.hvit); boks(x - b / 2 + 0.01, y, 1.0, 0.02, d - 0.05, 0.8, M.glass); },
+  dusj(x, y, b, d, h) { quad([W(x - b / 2, y + d / 2, 0), W(x + b / 2, y + d / 2, 0), W(x + b / 2, y + d / 2, h), W(x - b / 2, y + d / 2, h)], M.glass, grupper.rom, false);
+    quad([W(x - b / 2, y - d / 2, 0), W(x - b / 2, y + d / 2, 0), W(x - b / 2, y + d / 2, h), W(x - b / 2, y - d / 2, h)], M.glass, grupper.rom, false); },
+  garderobe(x, y, b, d, h) { boks(x, y, 0, b, d, h, M.hvit); },
+  seng(x, y, b, d, h, r) { boks(x, y, 0, b, d, h, M.tekstil, grupper.rom, r); boks(x, y, h, b - 0.05, d - 0.05, 0.12, M.hvit, grupper.rom, r);
+    boks(x, y - 0.15, h + 0.12, b - 0.02, d * 0.55, 0.04, M.gronnTekstil, grupper.rom, r); },
+  nattbord(x, y, b, d, h) { boks(x, y, 0, b, d, h, M.eik); },
+  terrasse_benk(x, y, b, d, h) { boks(x, y, 0, b, d, h, M.eik); boks(x, y, h, b, d, 0.06, M.tekstil); },
+  terrasse_bord(x, y, b, d, h) { lagInn.bord_lavt(x, y, b, d, h); },
+  plante(x, y, b, d, h) { const k = mesh(new THREE.CylinderGeometry(b / 2, b / 2.6, h * 0.4, 20), M.krukke); k.position.copy(W(x, y, h * 0.2));
+    for (let i = 0; i < 5; i++) { const s = mesh(new THREE.SphereGeometry(b * (0.35 + tilf() * 0.2), 10, 8), M.gronn); s.position.copy(W(x + (tilf() - 0.5) * b * 0.6, y + (tilf() - 0.5) * b * 0.6, h * (0.55 + tilf() * 0.4))); } },
+  teppe(x, y, b, d) { boks(x, y, 0.004, b, d, 0.01, M.teppe, grupper.rom); },
+};
+for (const [t, x, y, b, d, h, r] of D.innredning) lagInn[t](x, y, b, d, h, r);
+
+// ---------- navn og areal på rommene
+function skilt(tekst, under) {
+  const c = document.createElement('canvas'); c.width = 512; c.height = 160; const g = c.getContext('2d');
+  g.fillStyle = 'rgba(248,248,248,.88)'; g.beginPath(); g.roundRect ? g.roundRect(6, 6, 500, 148, 24) : g.rect(6, 6, 500, 148); g.fill();
+  g.fillStyle = '#121212'; g.font = '600 64px Poppins, Arial'; g.textAlign = 'center'; g.fillText(tekst, 256, 78);
+  g.font = '44px Poppins, Arial'; g.fillStyle = '#ea4f3d'; g.fillText(under, 256, 132);
+  const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding;
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, depthTest: false })); s.scale.set(1.3, 0.41, 1); s.renderOrder = 9; return s;
+}
+for (const r of D.rom) { const s = skilt(r.navn, r.areal + ' (ca.)'); s.position.copy(W(r.senter[0], r.senter[1], 2.0)); grupper.navn.add(s); }
+
+// ---------- knapper og visninger
+const knapper = document.getElementById('knapper');
+function knapp(tekst, fn, klasse = '') { const b = document.createElement('button'); b.textContent = tekst; b.className = klasse; b.onclick = fn; knapper.appendChild(b); return b; }
+let fly = null;
+function gaaTil(navn) {
+  const [k, m] = D.visninger[navn];
+  fly = { fraK: camera.position.clone(), fraM: controls.target.clone(), tilK: W(...k), tilM: W(...m), t: 0 };
+  const inne = !['Med tak', 'Ovenfra uten tak'].includes(navn);
+  grupper.tak.visible = navn !== 'Ovenfra uten tak';
+  takKnapp.textContent = grupper.tak.visible ? 'Skjul taket' : 'Vis taket';
+  grupper.navn.visible = !inne && !grupper.tak.visible && navnPaa;
+}
+for (const n of Object.keys(D.visninger)) knapp(n, () => gaaTil(n), n === 'Med tak' ? 'rod' : '');
+const takKnapp = knapp('Skjul taket', () => {
+  grupper.tak.visible = !grupper.tak.visible; takKnapp.textContent = grupper.tak.visible ? 'Skjul taket' : 'Vis taket';
+  grupper.navn.visible = !grupper.tak.visible && navnPaa;
+});
+let navnPaa = true;
+const navnKnapp = knapp('Skjul romnavn', () => { navnPaa = !navnPaa; grupper.navn.visible = navnPaa && !grupper.tak.visible; navnKnapp.textContent = navnPaa ? 'Skjul romnavn' : 'Vis romnavn'; });
+
+// start i en visning: ?vis=Stue (brukes også til kontrollbilder)
+const start = new URLSearchParams(location.search).get('vis');
+const startNavn = D.visninger[start] ? start : 'Med tak';
+gaaTil(startNavn); fly.t = 1;
+const [k0, m0] = D.visninger[startNavn];
+camera.position.copy(W(...k0)); controls.target.copy(W(...m0)); fly = null;
+addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
+(function tegn() {
+  requestAnimationFrame(tegn);
+  if (fly) {
+    fly.t = Math.min(1, fly.t + 0.025); const e = fly.t * fly.t * (3 - 2 * fly.t);
+    camera.position.lerpVectors(fly.fraK, fly.tilK, e); controls.target.lerpVectors(fly.fraM, fly.tilM, e);
+    if (fly.t >= 1) fly = null;
+  }
+  controls.update(); renderer.render(scene, camera);
+})();
+window.modellKlar = true;
+</script>
+</body>
+</html>
